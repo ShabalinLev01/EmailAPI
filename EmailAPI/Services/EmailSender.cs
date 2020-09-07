@@ -47,7 +47,6 @@ namespace EmailAPI.Services
                     string fromAddress = _configuration.GetValue<string>("Smtp:FromAddress");
                     string password = _configuration.GetValue<string>("Smtp:Password");
                     bool enableSsl = _configuration.GetValue<bool>("Smtp:EnableSSL");
-                    string deliveryMethod = _configuration.GetValue<string>("Smtp:DeliveryMethod");
                     
                     message.Subject = subject;
                     message.Body = body;
