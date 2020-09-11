@@ -8,16 +8,16 @@
         /// <summary>
         /// Subject of email.
         /// </summary>
-        public string subject { get; set; }
+        public string Subject { get; set; }
         
         /// <summary>
         /// Body of email.
         /// </summary>
-        public string body { get; set; }
+        public string Body { get; set; }
         
         /// <summary>
         /// Array of recipient addresses.
         /// </summary>
-        public string[] recipients { get; set; }
+        public string[] Recipients { get; set; }
     }
 }

@@ -2,11 +2,9 @@
 using System.Linq;
 using EmailAPI.Controllers;
 using EmailAPI.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EmailAPI.Tests
 {

@@ -1,7 +1,6 @@
-﻿using System.IO;
-using System.Linq;
-using System.Threading;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using EmailAPI.Models;
 using EmailAPI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -14,14 +13,14 @@ namespace EmailAPI.Controllers
     public class MailsController : Controller
     {
         private readonly ApplicationContext _db;
-        private readonly EmailSender _emailSender;
+        private readonly IEmailSender _emailSender;
 
         /// <summary>
         /// Constructor of MailsContoller
         /// </summary>
         /// <param name="db">DbContext</param>
         /// <param name="emailSender">EmailSender service for multithreading</param>
-        public MailsController( ApplicationContext db, EmailSender emailSender)
+        public MailsController( ApplicationContext db, IEmailSender emailSender)
         {
             _db = db;
             _emailSender = emailSender;
@@ -36,26 +35,14 @@ namespace EmailAPI.Controllers
         [HttpGet]
         public async Task<string> Get()
         {
-            var settings = new JsonSerializerSettings()
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Error = (sender, args) =>
-                {
-                    args.ErrorContext.Handled = true;
-                },
-            };
-            
-            var myEntity = _db.Emails.Select(x=>x).ToList();
-            return JsonConvert.SerializeObject(myEntity, settings);
+            var myEntity = _db.Emails.ToList();
+            return JsonConvert.SerializeObject(myEntity);
         }
 
         ///  <summary>
         ///  The request forms an email and sends it using the EmailSender service
         ///  </summary>
-        ///  <param name="email">Contains: subject, body, recipients</param>
-        ///  <param name="subject">Subject of mail</param>
-        ///  <param name="body">Body of mail</param>
-        ///  <param name="recipients">Recipients of mail</param>
+        ///  <param name="email">Contains: subject, body, recipients[]</param>
         ///  <remarks>
         ///  NOTICE!
         ///  Errors related to smtp will be saved to the database
@@ -76,18 +63,17 @@ namespace EmailAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] EmailPostForm email)
         {
-            if (email.body == null || email.recipients == null || email.subject == null)
+            var mapper  = new MapperConfiguration(cfg => cfg.CreateMap<EmailPostForm, EmailLog>()
+                    .ForMember("Body", opt => opt.MapFrom(c => c.Body))
+                    .ForMember("Subject", opt => opt.MapFrom(c => c.Subject))
+                    .ForMember("Recipients", opt => opt.MapFrom(c => c.Recipients)))
+                .CreateMapper();
+            Parallel.ForEach(email.Recipients, async recipient =>
             {
-                return Conflict();
-            }
-            else
-            {
-                foreach (var recipient in email.recipients)
-                {
-                    Thread myThread = new Thread(() => _emailSender.EmailSend(recipient, email.body, email.subject));
-                    myThread.Start();
-                }
-            }
+                EmailLog emailLog = mapper.Map<EmailPostForm, EmailLog>(email);
+                emailLog.Recipients = recipient;
+                await _emailSender.EmailSend(emailLog);
+            });
             return Ok();
         }
     }

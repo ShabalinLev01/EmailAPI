@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using EmailAPI.Models;
 using EmailAPI.Services;
+using MailKit.Net.Smtp;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EmailAPI.Tests
 {
     public class EmailSenderTest
     {
-        
         public Dictionary<string, string> ConfigurationSMTPforTest()
         {
             var myConfiguration = new Dictionary<string, string>
@@ -21,8 +20,7 @@ namespace EmailAPI.Tests
                 {"Smtp:Server", "smtp.client.example"},
                 {"Smtp:Port", "25"},
                 {"Smtp:FromAddress", "email@example.com"},
-                {"Smtp:Password", "password"},
-                {"Smtp:EnableSSL", "true"}
+                {"Smtp:Password", "password"}
             };
             return myConfiguration;
         }
@@ -35,6 +33,8 @@ namespace EmailAPI.Tests
         public void EmailSenderTestForResult_NEEDTOSETUP() //Setup in ConfigurationSMTPforTest and in Assert.Equal change your expected value
         {
             //Arrange
+            Mock<SmtpClient> smtpClient = new Mock<SmtpClient>();
+            
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(ConfigurationSMTPforTest())
                 .Build();
@@ -58,7 +58,11 @@ namespace EmailAPI.Tests
 
             //Act
             var service = new EmailSender(configuration, serviceScopeFactory.Object);
-            var result = service.EmailSend("test@example.ru", "body", "subject");
+            EmailLog emailLog = new EmailLog();
+            emailLog.Recipients = "shabalinlev01gmail.com";
+            emailLog.Body = "body";
+            emailLog.Subject = "subject";
+            var result = service.EmailSend(emailLog);
             
             //Assert
             Assert.Equal("Failed", result.Result.Result); //FOR STANDART CONFIG IN APPSETTINGS.JSON

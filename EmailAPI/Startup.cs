@@ -23,7 +23,7 @@ namespace EmailAPI
             services.AddDbContext<ApplicationContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddControllers().AddNewtonsoftJson();
-            services.AddTransient<EmailSender>();
+            services.AddTransient<IEmailSender, EmailSender>();
         }
         
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
